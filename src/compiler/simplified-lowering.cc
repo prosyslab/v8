@@ -716,6 +716,10 @@ class RepresentationSelector {
 
   // Lowering and change insertion phase.
   void RunLowerPhase(SimplifiedLowering* lowering) {
+    StdoutStream{} << "- Start Graph" << std::endl;
+    graph()->Print();
+    StdoutStream{} << "- End Graph" << std::endl;
+
     TRACE("--{Lower phase}--\n");
     for (auto it = traversal_nodes_.cbegin(); it != traversal_nodes_.cend();
          ++it) {
@@ -730,6 +734,8 @@ class RepresentationSelector {
       VisitNode<LOWER>(node, info->truncation(), lowering);
     }
 
+    StdoutStream{} << "- Simplified Lowering" << std::endl;
+
     // Perform the final replacements.
     for (NodeVector::iterator i = replacements_.begin();
          i != replacements_.end(); ++i) {
@@ -743,6 +749,9 @@ class RepresentationSelector {
         if (*j == node) *j = replacement;
       }
     }
+    StdoutStream{} << "- Start Graph" << std::endl;
+    graph()->Print();
+    StdoutStream{} << "- End Graph" << std::endl;
   }
 
   void RunVerifyPhase(OptimizedCompilationInfo* info) {
@@ -1624,12 +1633,10 @@ class RepresentationSelector {
     // signed overflow. This is incompatible with relying on a Word32 truncation
     // in order to skip the overflow check.  Similarly, we must not drop -0 from
     // the result type unless we deopt for -0 inputs.
-    Type const restriction =
-        truncation.IsUsedAsWord32()
-            ? Type::Any()
-            : (truncation.identify_zeros() == kIdentifyZeros)
-                  ? Type::Signed32OrMinusZero()
-                  : Type::Signed32();
+    Type const restriction = truncation.IsUsedAsWord32() ? Type::Any()
+                             : (truncation.identify_zeros() == kIdentifyZeros)
+                                 ? Type::Signed32OrMinusZero()
+                                 : Type::Signed32();
 
     // Handle the case when no int32 checks on inputs are necessary (but
     // an overflow check is needed on the output). Note that we do not
@@ -4348,11 +4355,12 @@ class RepresentationSelector {
 
   JSGraph* jsgraph_;
   JSHeapBroker* broker_;
-  Zone* zone_;                      // Temporary zone.
+  Zone* zone_;  // Temporary zone.
   // Map from node to its uses that might need to be revisited.
   ZoneMap<Node*, ZoneVector<Node*>> might_need_revisit_;
-  size_t count_;                    // number of nodes in the graph
-  ZoneVector<NodeInfo> info_;       // node id -> usage information
+  size_t count_;               // number of nodes in the graph
+  ZoneVector<NodeInfo> info_;  // node id -> usage information
+
 #ifdef DEBUG
   ZoneVector<InputUseInfos> node_input_use_infos_;  // Debug information about
                                                     // requirements on inputs.
