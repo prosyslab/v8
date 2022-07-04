@@ -26,7 +26,6 @@ enum class GraphReducer::State : uint8_t {
   kVisited
 };
 
-
 void Reducer::Finalize() {}
 
 Reduction Reducer::Reduce(Node* node,
@@ -58,11 +57,9 @@ GraphReducer::GraphReducer(Zone* zone, Graph* graph, TickCounter* tick_counter,
 
 GraphReducer::~GraphReducer() = default;
 
-
 void GraphReducer::AddReducer(Reducer* reducer) {
   reducers_.push_back(reducer);
 }
-
 
 void GraphReducer::ReduceNode(Node* node) {
   DCHECK(stack_.empty());
@@ -93,15 +90,17 @@ void GraphReducer::ReduceNode(Node* node) {
   DCHECK(stack_.empty());
 }
 
-
 void GraphReducer::ReduceGraph() { ReduceNode(graph()->end()); }
-
 
 Reduction GraphReducer::Reduce(Node* const node) {
   auto skip = reducers_.end();
   for (auto i = reducers_.begin(); i != reducers_.end();) {
+    std::string before = {};
     if (i != skip) {
       tick_counter_->TickAndMaybeEnterSafepoint();
+      if (v8_flags.trace_turbo_reduction) {
+        before = graph()->ToString();
+      }
       Reduction reduction = (*i)->Reduce(node, observe_node_manager_);
       if (!reduction.Changed()) {
         // No change from this reducer.
@@ -110,12 +109,18 @@ Reduction GraphReducer::Reduce(Node* const node) {
         // all the other reducers for this node, as now there may be more
         // opportunities for reduction.
         if (v8_flags.trace_turbo_reduction) {
+          StdoutStream{} << "- Start Graph" << std::endl;
+          std::cout << before;
+          StdoutStream{} << "- End Graph" << std::endl;
           UnparkedScopeIfNeeded unparked(broker_);
           // TODO(neis): Disallow racy handle dereference once we stop
           // supporting --no-local-heaps --no-concurrent-inlining.
           AllowHandleDereference allow_deref;
           StdoutStream{} << "- In-place update of #" << *node << " by reducer "
                          << (*i)->reducer_name() << std::endl;
+          StdoutStream{} << "- Start Graph" << std::endl;
+          graph()->Print();
+          StdoutStream{} << "- End Graph" << std::endl;
         }
         skip = i;
         i = reducers_.begin();
@@ -123,6 +128,9 @@ Reduction GraphReducer::Reduce(Node* const node) {
       } else {
         // {node} was replaced by another node.
         if (v8_flags.trace_turbo_reduction) {
+          StdoutStream{} << "- Start Graph" << std::endl;
+          std::cout << before;
+          StdoutStream{} << "- End Graph" << std::endl;
           UnparkedScopeIfNeeded unparked(broker_);
           // TODO(neis): Disallow racy handle dereference once we stop
           // supporting --no-local-heaps --no-concurrent-inlining.
@@ -130,6 +138,9 @@ Reduction GraphReducer::Reduce(Node* const node) {
           StdoutStream{} << "- Replacement of #" << *node << " with #"
                          << *(reduction.replacement()) << " by reducer "
                          << (*i)->reducer_name() << std::endl;
+          StdoutStream{} << "- Start Graph" << std::endl;
+          graph()->Print();
+          StdoutStream{} << "- End Graph" << std::endl;
         }
         return reduction;
       }
@@ -143,7 +154,6 @@ Reduction GraphReducer::Reduce(Node* const node) {
   // At least one reducer did some in-place reduction.
   return Reducer::Changed(node);
 }
-
 
 void GraphReducer::ReduceTop() {
   NodeState& entry = stack_.top();
@@ -208,11 +218,9 @@ void GraphReducer::ReduceTop() {
   }
 }
 
-
 void GraphReducer::Replace(Node* node, Node* replacement) {
   Replace(node, replacement, std::numeric_limits<NodeId>::max());
 }
-
 
 void GraphReducer::Replace(Node* node, Node* replacement, NodeId max_id) {
   if (node == graph()->start()) graph()->SetStart(replacement);
@@ -246,7 +254,6 @@ void GraphReducer::Replace(Node* node, Node* replacement, NodeId max_id) {
     Recurse(replacement);
   }
 }
-
 
 void GraphReducer::ReplaceWithValue(Node* node, Node* value, Node* effect,
                                     Node* control) {
@@ -285,13 +292,11 @@ void GraphReducer::ReplaceWithValue(Node* node, Node* value, Node* effect,
   }
 }
 
-
 void GraphReducer::Pop() {
   Node* node = stack_.top().node;
   state_.Set(node, State::kVisited);
   stack_.pop();
 }
-
 
 void GraphReducer::Push(Node* const node) {
   DCHECK_NE(State::kOnStack, state_.Get(node));
@@ -299,13 +304,11 @@ void GraphReducer::Push(Node* const node) {
   stack_.push({node, 0});
 }
 
-
 bool GraphReducer::Recurse(Node* node) {
   if (state_.Get(node) > State::kRevisit) return false;
   Push(node);
   return true;
 }
-
 
 void GraphReducer::Revisit(Node* node) {
   if (state_.Get(node) == State::kVisited) {
