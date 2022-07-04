@@ -20,7 +20,6 @@ class GraphDecorator;
 class Node;
 class Operator;
 
-
 // Marks are used during traversal of the graph to distinguish states of nodes.
 // Each node has a mark which is a monotonically increasing integer, and a
 // {NodeMarker} has a range of values that indicate states of a node.
@@ -94,6 +93,7 @@ class V8_EXPORT_PRIVATE Graph final : public NON_EXPORTED_BASE(ZoneObject) {
 
   // Very simple print API usable in a debugger.
   void Print() const;
+  std::string ToString() const;
 
  private:
   friend class NodeMarkerBase;
@@ -107,7 +107,6 @@ class V8_EXPORT_PRIVATE Graph final : public NON_EXPORTED_BASE(ZoneObject) {
   NodeId next_node_id_;
   ZoneVector<GraphDecorator*> decorators_;
 };
-
 
 // A graph decorator can be used to add behavior to the creation of nodes
 // in a graph.

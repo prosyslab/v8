@@ -33,11 +33,9 @@ void Graph::Decorate(Node* node) {
   }
 }
 
-
 void Graph::AddDecorator(GraphDecorator* decorator) {
   decorators_.push_back(decorator);
 }
-
 
 void Graph::RemoveDecorator(GraphDecorator* decorator) {
   auto const it = std::find(decorators_.begin(), decorators_.end(), decorator);
@@ -60,14 +58,12 @@ Node* Graph::NewNodeUnchecked(const Operator* op, int input_count,
   return node;
 }
 
-
 Node* Graph::CloneNode(const Node* node) {
   DCHECK_NOT_NULL(node);
   Node* const clone = Node::Clone(zone(), NextNodeId(), node);
   Decorate(clone);
   return clone;
 }
-
 
 NodeId Graph::NextNodeId() {
   // A node's id is internally stored in a bit field using fewer bits than
@@ -77,7 +73,11 @@ NodeId Graph::NextNodeId() {
 }
 
 void Graph::Print() const { StdoutStream{} << AsRPO(*this); }
-
+std::string Graph::ToString() const {
+  std::stringstream ss;
+  ss << AsRPO(*this);
+  return ss.str();
+}
 }  // namespace compiler
 }  // namespace internal
 }  // namespace v8
