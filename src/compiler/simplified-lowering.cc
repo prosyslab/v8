@@ -676,6 +676,10 @@ class RepresentationSelector {
 
   // Lowering and change insertion phase.
   void RunLowerPhase(SimplifiedLowering* lowering) {
+    StdoutStream{} << "- Start Graph" << std::endl;
+    graph()->Print();
+    StdoutStream{} << "- End Graph" << std::endl;
+
     TRACE("--{Lower phase}--\n");
     for (auto it = traversal_nodes_.cbegin(); it != traversal_nodes_.cend();
          ++it) {
@@ -690,6 +694,8 @@ class RepresentationSelector {
       VisitNode<LOWER>(node, info->truncation(), lowering);
     }
 
+    StdoutStream{} << "- Simplified Lowering" << std::endl;
+
     // Perform the final replacements.
     for (NodeVector::iterator i = replacements_.begin();
          i != replacements_.end(); ++i) {
@@ -703,6 +709,9 @@ class RepresentationSelector {
         if (*j == node) *j = replacement;
       }
     }
+    StdoutStream{} << "- Start Graph" << std::endl;
+    graph()->Print();
+    StdoutStream{} << "- End Graph" << std::endl;
   }
 
   void Run(SimplifiedLowering* lowering) {
@@ -3920,11 +3929,11 @@ class RepresentationSelector {
   }
 
   JSGraph* jsgraph_;
-  Zone* zone_;                      // Temporary zone.
+  Zone* zone_;  // Temporary zone.
   // Map from node to its uses that might need to be revisited.
   ZoneMap<Node*, ZoneVector<Node*>> might_need_revisit_;
-  size_t const count_;              // number of nodes in the graph
-  ZoneVector<NodeInfo> info_;       // node id -> usage information
+  size_t const count_;         // number of nodes in the graph
+  ZoneVector<NodeInfo> info_;  // node id -> usage information
 #ifdef DEBUG
   ZoneVector<InputUseInfos> node_input_use_infos_;  // Debug information about
                                                     // requirements on inputs.

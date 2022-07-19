@@ -5,6 +5,7 @@
 #ifndef V8_COMPILER_OPERATOR_H_
 #define V8_COMPILER_OPERATOR_H_
 
+#include <iomanip>
 #include <ostream>  // NOLINT(readability/streams)
 
 #include "src/base/compiler-specific.h"
@@ -156,11 +157,9 @@ V8_EXPORT_PRIVATE std::ostream& operator<<(std::ostream& os,
 template <typename T>
 struct OpEqualTo : public std::equal_to<T> {};
 
-
 // Default hashing function for below Operator1<*> class.
 template <typename T>
 struct OpHash : public base::hash<T> {};
-
 
 // A templatized implementation of Operator that has one static parameter of
 // type {T} with the proper default equality and hashing functions.
@@ -195,7 +194,7 @@ class Operator1 : public Operator {
   // printing of a parameter.
 
   virtual void PrintParameter(std::ostream& os, PrintVerbosity verbose) const {
-    os << "[" << parameter() << "]";
+    os << "[" << std::setprecision(17) << parameter() << "]";
   }
 
   void PrintToImpl(std::ostream& os, PrintVerbosity verbose) const override {
@@ -209,14 +208,12 @@ class Operator1 : public Operator {
   Hash const hash_;
 };
 
-
 // Helper to extract parameters from Operator1<*> operator.
 template <typename T>
 inline T const& OpParameter(const Operator* op) {
   return reinterpret_cast<const Operator1<T, OpEqualTo<T>, OpHash<T>>*>(op)
       ->parameter();
 }
-
 
 // NOTE: We have to be careful to use the right equal/hash functions below, for
 // float/double we always use the ones operating on the bit level, for Handle<>
