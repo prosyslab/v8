@@ -138,9 +138,6 @@ Reduction GraphReducer::Reduce(Node* const node) {
           StdoutStream{} << "- Replacement of #" << *node << " with #"
                          << *(reduction.replacement()) << " by reducer "
                          << (*i)->reducer_name() << std::endl;
-          StdoutStream{} << "- Start Graph" << std::endl;
-          graph()->Print();
-          StdoutStream{} << "- End Graph" << std::endl;
         }
         return reduction;
       }
@@ -215,6 +212,11 @@ void GraphReducer::ReduceTop() {
   // Check if we have a new replacement.
   if (replacement != node) {
     Replace(node, replacement, max_id);
+    if (v8_flags.trace_turbo_reduction) {
+      StdoutStream{} << "- Start Graph" << std::endl;
+      graph()->Print();
+      StdoutStream{} << "- End Graph" << std::endl;
+    }
   }
 }
 
