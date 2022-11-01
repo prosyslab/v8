@@ -725,9 +725,11 @@ class RepresentationSelector {
 
   // Lowering and change insertion phase.
   void RunLowerPhase(SimplifiedLowering* lowering) {
-    StdoutStream{} << "- Start Graph" << std::endl;
-    graph()->Print();
-    StdoutStream{} << "- End Graph" << std::endl;
+    if (v8_flags.trace_turbo_reduction) {
+      StdoutStream{} << "- Start Graph" << std::endl;
+      graph()->Print();
+      StdoutStream{} << "- End Graph" << std::endl;
+    }
 
     TRACE("--{Lower phase}--\n");
     for (auto it = traversal_nodes_.cbegin(); it != traversal_nodes_.cend();
@@ -742,8 +744,9 @@ class RepresentationSelector {
                                           node);
       VisitNode<LOWER>(node, info->truncation(), lowering);
     }
-
-    StdoutStream{} << "- Simplified Lowering" << std::endl;
+    if (v8_flags.trace_turbo_reduction) {
+      StdoutStream{} << "- Simplified Lowering" << std::endl;
+    }
 
     // Perform the final replacements.
     for (NodeVector::iterator i = replacements_.begin();
@@ -758,9 +761,11 @@ class RepresentationSelector {
         if (*j == node) *j = replacement;
       }
     }
-    StdoutStream{} << "- Start Graph" << std::endl;
-    graph()->Print();
-    StdoutStream{} << "- End Graph" << std::endl;
+    if (v8_flags.trace_turbo_reduction) {
+      StdoutStream{} << "- Start Graph" << std::endl;
+      graph()->Print();
+      StdoutStream{} << "- End Graph" << std::endl;
+    }
   }
 
   void RunVerifyPhase(OptimizedCompilationInfo* info) {
