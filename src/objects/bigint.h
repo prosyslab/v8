@@ -242,6 +242,7 @@ class BigInt : public BigIntBase {
 
   DECL_CAST(BigInt)
   void BigIntShortPrint(std::ostream& os);
+  void BigIntPrint(std::ostream& os);
 
   inline static int SizeFor(int length) {
     return kHeaderSize + length * kDigitSize;

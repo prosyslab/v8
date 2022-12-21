@@ -1193,6 +1193,22 @@ void BigInt::BigIntShortPrint(std::ostream& os) {
   os << digit(0);
 }
 
+void BigInt::BigIntPrint(std::ostream& os) {
+  if (sign()) os << "- ";
+  else os << "+ ";
+  int len = length();
+
+  if (len == 0) {
+    os << "0";
+    return;
+  }
+
+  for (int i = 0; i < len; i++) {
+    os << digit(i);
+    if (i != (len - 1)) os << " ";
+  }
+}
+
 // Internal helpers.
 
 // Adds 1 to the absolute value of {x} and sets the result's sign to {sign}.
