@@ -75,19 +75,16 @@ NodeId Graph::NextNodeId() {
 }
 
 void Graph::Print() const { StdoutStream{} << AsRPO(*this); }
-<<<<<<< HEAD
 
 void Graph::RecordSimdStore(Node* store) { simd_stores_.push_back(store); }
 
 ZoneVector<Node*> const& Graph::GetSimdStoreNodes() { return simd_stores_; }
 
-=======
 std::string Graph::ToString() const {
   std::stringstream ss;
   ss << AsRPO(*this);
   return ss.str();
 }
->>>>>>> ee24770492f... x[turbofan] patch to print IR
 }  // namespace compiler
 }  // namespace internal
 }  // namespace v8
