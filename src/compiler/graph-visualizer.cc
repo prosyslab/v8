@@ -666,9 +666,10 @@ void GraphC1Visualizer::PrintSchedule(const char* phase,
       PrintIntProperty(
           "first_lir_id",
           LifetimePosition::GapFromInstructionIndex(first_index).value());
-      PrintIntProperty("last_lir_id",
-                       LifetimePosition::InstructionFromInstructionIndex(
-                           last_index).value());
+      PrintIntProperty(
+          "last_lir_id",
+          LifetimePosition::InstructionFromInstructionIndex(last_index)
+              .value());
     }
 
     {
@@ -919,14 +920,45 @@ std::ostream& operator<<(std::ostream& os, const AsRPO& ar) {
     if (pop) {
       state[n->id()] = kVisited;
       stack.pop();
-      os << "#" << n->id() << ":" << *n->op() << "(";
+
+      int first_value_index = NodeProperties::FirstValueIndex(n);
+      int first_effect_index = NodeProperties::FirstEffectIndex(n);
+      int first_control_index = NodeProperties::FirstControlIndex(n);
+
+      int value_inputs = n->op()->ValueInputCount();
+      int effect_inputs = n->op()->EffectInputCount();
+      int control_inputs = n->op()->ControlInputCount();
+
+      os << "#" << n->id() << ":" << *n->op();
+
       // Print the inputs.
-      int j = 0;
-      for (Node* const i : n->inputs()) {
-        if (j++ > 0) os << ", ";
-        os << "#" << SafeId(i) << ":" << SafeMnemonic(i);
+      os << "(";
+      for (int i = 0; i < value_inputs; i++) {
+        Node* input = n->InputAt(first_value_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) os << ", ";
+        os << "#" << SafeId(input) << ":" << SafeMnemonic(input);
       }
       os << ")";
+
+      os << "(";
+      for (int i = 0; i < effect_inputs; i++) {
+        Node* input = n->InputAt(first_effect_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) os << ", ";
+        os << "#" << SafeId(input) << ":" << SafeMnemonic(input);
+      }
+      os << ")";
+
+      os << "(";
+      for (int i = 0; i < control_inputs; i++) {
+        Node* input = n->InputAt(first_control_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) os << ", ";
+        os << "#" << SafeId(input) << ":" << SafeMnemonic(input);
+      }
+      os << ")";
+
       // Print the node type, if any.
       if (NodeProperties::IsTyped(n)) {
         os << "  [Type: " << NodeProperties::GetType(n) << "]";
@@ -935,6 +967,91 @@ std::ostream& operator<<(std::ostream& os, const AsRPO& ar) {
     }
   }
   return os;
+}
+
+std::stringstream& operator<<(std::stringstream& ss, const AsRPO& ar) {
+  AccountingAllocator allocator;
+  Zone local_zone(&allocator, ZONE_NAME);
+
+  // Do a post-order depth-first search on the RPO graph. For every node,
+  // print:
+  //
+  //   - the node id
+  //   - the operator mnemonic
+  //   - in square brackets its parameter (if present)
+  //   - in parentheses the list of argument ids and their mnemonics
+  //   - the node type (if it is typed)
+
+  // Post-order guarantees that all inputs of a node will be printed before
+  // the node itself, if there are no cycles. Any cycles are broken
+  // arbitrarily.
+
+  ZoneVector<uint8_t> state(ar.graph.NodeCount(), kUnvisited, &local_zone);
+  ZoneStack<Node*> stack(&local_zone);
+
+  stack.push(ar.graph.end());
+  state[ar.graph.end()->id()] = kOnStack;
+  while (!stack.empty()) {
+    Node* n = stack.top();
+    bool pop = true;
+    for (Node* const i : n->inputs()) {
+      if (state[i->id()] == kUnvisited) {
+        state[i->id()] = kOnStack;
+        stack.push(i);
+        pop = false;
+        break;
+      }
+    }
+    if (pop) {
+      state[n->id()] = kVisited;
+      stack.pop();
+
+      int first_value_index = NodeProperties::FirstValueIndex(n);
+      int first_effect_index = NodeProperties::FirstEffectIndex(n);
+      int first_control_index = NodeProperties::FirstControlIndex(n);
+
+      int value_inputs = n->op()->ValueInputCount();
+      int effect_inputs = n->op()->EffectInputCount();
+      int control_inputs = n->op()->ControlInputCount();
+
+      ss << "#" << n->id() << ":" << *n->op();
+
+      // Print the inputs.
+      ss << "(";
+      for (int i = 0; i < value_inputs; i++) {
+        Node* input = n->InputAt(first_value_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) ss << ", ";
+        ss << "#" << SafeId(input) << ":" << SafeMnemonic(input);
+      }
+      ss << ")";
+
+      ss << "(";
+      for (int i = 0; i < effect_inputs; i++) {
+        Node* input = n->InputAt(first_effect_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) ss << ", ";
+        ss << "#" << SafeId(input) << ":" << SafeMnemonic(input);
+      }
+      ss << ")";
+
+      ss << "(";
+      for (int i = 0; i < control_inputs; i++) {
+        Node* input = n->InputAt(first_control_index + i);
+        if (input == nullptr) continue;
+        if (i > 0) ss << ", ";
+        ss << "#" << SafeId(input) << ":" << SafeMnemonic(input);
+      }
+      ss << ")";
+
+      // Print the node type, if any.
+      if (NodeProperties::IsTyped(n)) {
+        ss << "  [Type: " << NodeProperties::GetType(n) << "]";
+      }
+      ss << std::endl;
+    }
+  }
+  return ss;
 }
 
 namespace {

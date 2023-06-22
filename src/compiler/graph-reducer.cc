@@ -93,15 +93,17 @@ void GraphReducer::ReduceNode(Node* node) {
   DCHECK(stack_.empty());
 }
 
-
 void GraphReducer::ReduceGraph() { ReduceNode(graph()->end()); }
-
 
 Reduction GraphReducer::Reduce(Node* const node) {
   auto skip = reducers_.end();
   for (auto i = reducers_.begin(); i != reducers_.end();) {
+    std::string before = {};
     if (i != skip) {
       tick_counter_->TickAndMaybeEnterSafepoint();
+      if (v8_flags.trace_turbo_reduction) {
+        before = graph()->ToString();
+      }
       Reduction reduction = (*i)->Reduce(node, observe_node_manager_);
       if (!reduction.Changed()) {
         // No change from this reducer.
@@ -110,12 +112,18 @@ Reduction GraphReducer::Reduce(Node* const node) {
         // all the other reducers for this node, as now there may be more
         // opportunities for reduction.
         if (v8_flags.trace_turbo_reduction) {
+          StdoutStream{} << "- Start Graph" << std::endl;
+          std::cout << before;
+          StdoutStream{} << "- End Graph" << std::endl;
           UnparkedScopeIfNeeded unparked(broker_);
           // TODO(neis): Disallow racy handle dereference once we stop
           // supporting --no-local-heaps --no-concurrent-inlining.
           AllowHandleDereference allow_deref;
           StdoutStream{} << "- In-place update of #" << *node << " by reducer "
                          << (*i)->reducer_name() << std::endl;
+          StdoutStream{} << "- Start Graph" << std::endl;
+          graph()->Print();
+          StdoutStream{} << "- End Graph" << std::endl;
         }
         skip = i;
         i = reducers_.begin();
@@ -123,6 +131,9 @@ Reduction GraphReducer::Reduce(Node* const node) {
       } else {
         // {node} was replaced by another node.
         if (v8_flags.trace_turbo_reduction) {
+          StdoutStream{} << "- Start Graph" << std::endl;
+          std::cout << before;
+          StdoutStream{} << "- End Graph" << std::endl;
           UnparkedScopeIfNeeded unparked(broker_);
           // TODO(neis): Disallow racy handle dereference once we stop
           // supporting --no-local-heaps --no-concurrent-inlining.
@@ -205,14 +216,17 @@ void GraphReducer::ReduceTop() {
   // Check if we have a new replacement.
   if (replacement != node) {
     Replace(node, replacement, max_id);
+    if (v8_flags.trace_turbo_reduction) {
+      StdoutStream{} << "- Start Graph" << std::endl;
+      graph()->Print();
+      StdoutStream{} << "- End Graph" << std::endl;
+    }
   }
 }
-
 
 void GraphReducer::Replace(Node* node, Node* replacement) {
   Replace(node, replacement, std::numeric_limits<NodeId>::max());
 }
-
 
 void GraphReducer::Replace(Node* node, Node* replacement, NodeId max_id) {
   if (node == graph()->start()) graph()->SetStart(replacement);

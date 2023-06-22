@@ -5,6 +5,7 @@
 #ifndef V8_COMPILER_OPERATOR_H_
 #define V8_COMPILER_OPERATOR_H_
 
+#include <iomanip>
 #include <ostream>
 
 #include "src/base/compiler-specific.h"
@@ -194,7 +195,7 @@ class Operator1 : public Operator {
   // printing of a parameter.
 
   virtual void PrintParameter(std::ostream& os, PrintVerbosity verbose) const {
-    os << "[" << parameter() << "]";
+    os << "[" << std::setprecision(17) << parameter() << "]";
   }
 
   void PrintToImpl(std::ostream& os, PrintVerbosity verbose) const override {

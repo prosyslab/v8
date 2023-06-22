@@ -79,7 +79,11 @@ NodeId Graph::NextNodeId() {
 }
 
 void Graph::Print() const { StdoutStream{} << AsRPO(*this); }
-
+std::string Graph::ToString() const {
+  std::stringstream ss;
+  ss << AsRPO(*this);
+  return ss.str();
+}
 void Graph::RecordSimdStore(Node* store) { simd_stores_.push_back(store); }
 
 ZoneVector<Node*> const& Graph::GetSimdStoreNodes() { return simd_stores_; }

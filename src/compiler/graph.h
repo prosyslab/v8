@@ -94,6 +94,7 @@ class V8_EXPORT_PRIVATE Graph final : public NON_EXPORTED_BASE(ZoneObject) {
 
   // Very simple print API usable in a debugger.
   void Print() const;
+  std::string ToString() const;
 
   bool HasSimd() const { return has_simd_; }
   void SetSimd(bool has_simd) { has_simd_ = has_simd; }
